@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "results": [
+    {
+      "name": "healthcheck",
+      "status_code": 200,
+      "response": {
+        "status": "ok"
+      }
+    },
+    {
+      "name": "predict-quality",
+      "status_code": 200,
+      "response": {
+        "predicted_quality": 5.0593,
+        "model_version": "0.1.0"
+      }
+    }
+  ]
+}
