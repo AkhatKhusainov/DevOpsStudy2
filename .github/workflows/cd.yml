@@ -1,0 +1,82 @@
+name: CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Docker image tag to test
+        required: false
+        default: latest
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+jobs:
+  functional-tests:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve image tag
+        id: image_meta
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.image_tag }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "tag=sha-${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Pull image
+        run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/wine-quality-mlops:${{ steps.image_meta.outputs.tag }}
+
+      - name: Run container
+        run: |
+          docker run -d --rm --name wine-quality-mlops -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME }}/wine-quality-mlops:${{ steps.image_meta.outputs.tag }}
+
+      - name: Wait for API health
+        shell: bash
+        run: |
+          for attempt in {1..20}; do
+            if curl --fail http://127.0.0.1:8000/health; then
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
+
+      - name: Run scenario inside container
+        run: docker exec wine-quality-mlops python tests/functional/run_scenario.py --scenario /app/scenario.json --base-url http://127.0.0.1:8000 --report /app/artifacts/functional-test-report.json
+
+      - name: Copy scenario report
+        if: always()
+        run: docker cp wine-quality-mlops:/app/artifacts/functional-test-report.json functional-test-report.json
+
+      - name: Upload CD artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cd-functional-report
+          path: functional-test-report.json
+
+      - name: Show container logs
+        if: always()
+        run: docker logs wine-quality-mlops
+
+      - name: Stop container
+        if: always()
+        run: docker stop wine-quality-mlops

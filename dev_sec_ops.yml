@@ -1,0 +1,12 @@
+generated_at: '2026-05-13T15:05:02.273778+00:00'
+docker_image:
+  ref: wine-quality-mlops:local
+  digest: wine-quality-mlops@sha256:590191ec360c2ac5ad6f8dac6743d207998aedfcbd2fb3f09f37cd722e68e19e
+  image_id: sha256:590191ec360c2ac5ad6f8dac6743d207998aedfcbd2fb3f09f37cd722e68e19e
+git:
+  last_5_commits: []
+quality:
+  test_coverage: 87.76%
+notes:
+- Docker image digest may stay unavailable until the image is pushed to a registry.
+- Commit hashes appear after the repository contains commits.

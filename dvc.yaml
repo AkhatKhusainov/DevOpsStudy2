@@ -1,0 +1,29 @@
+stages:
+  prepare:
+    cmd: python scripts/prepare_data.py --input data/raw/winequality-red.csv --output-dir data/processed --config config.ini
+    deps:
+      - config.ini
+      - data/raw/winequality-red.csv
+      - scripts/prepare_data.py
+      - src/wine_quality_mlops/config.py
+      - src/wine_quality_mlops/data.py
+      - src/wine_quality_mlops/schema.py
+    outs:
+      - data/processed/train.csv
+      - data/processed/test.csv
+      - data/processed/summary.json
+  train:
+    cmd: python scripts/train_model.py --train-path data/processed/train.csv --test-path data/processed/test.csv --artifacts-dir artifacts --config config.ini
+    deps:
+      - config.ini
+      - data/processed/train.csv
+      - data/processed/test.csv
+      - scripts/train_model.py
+      - src/wine_quality_mlops/config.py
+      - src/wine_quality_mlops/schema.py
+      - src/wine_quality_mlops/train.py
+    outs:
+      - artifacts/model.joblib
+      - artifacts/model_metadata.json
+    metrics:
+      - artifacts/metrics.json

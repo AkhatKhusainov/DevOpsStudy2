@@ -1,0 +1,89 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: python scripts/prepare_data.py --input data/raw/winequality-red.csv 
+      --output-dir data/processed --config config.ini
+    deps:
+    - path: config.ini
+      hash: md5
+      md5: 667534fd694225a3bf35cf51a6fac99a
+      size: 241
+    - path: data/raw/winequality-red.csv
+      hash: md5
+      md5: 2daeecee174368f8a33b82c8cccae3a5
+      size: 84199
+    - path: scripts/prepare_data.py
+      hash: md5
+      md5: ace59749b95b9fa977860a0dceef2213
+      size: 326
+    - path: src/wine_quality_mlops/config.py
+      hash: md5
+      md5: 64bba72723bca88423f0b0071db57256
+      size: 1865
+    - path: src/wine_quality_mlops/data.py
+      hash: md5
+      md5: 5ab3c326541655adf067ccf183d1b1ce
+      size: 2658
+    - path: src/wine_quality_mlops/schema.py
+      hash: md5
+      md5: 1274d5b5849d4e5037f7339fb7211627
+      size: 401
+    outs:
+    - path: data/processed/summary.json
+      hash: md5
+      md5: 5b6520a4959ba8028f6bf3d7002e1899
+      size: 582
+    - path: data/processed/test.csv
+      hash: md5
+      md5: e0a28877dd8e094489f6d3578b1d9a0d
+      size: 16019
+    - path: data/processed/train.csv
+      hash: md5
+      md5: eed0939b19a801fd938df519b1d6c81e
+      size: 63682
+  train:
+    cmd: python scripts/train_model.py --train-path data/processed/train.csv 
+      --test-path data/processed/test.csv --artifacts-dir artifacts --config 
+      config.ini
+    deps:
+    - path: config.ini
+      hash: md5
+      md5: 667534fd694225a3bf35cf51a6fac99a
+      size: 241
+    - path: data/processed/test.csv
+      hash: md5
+      md5: e0a28877dd8e094489f6d3578b1d9a0d
+      size: 16019
+    - path: data/processed/train.csv
+      hash: md5
+      md5: eed0939b19a801fd938df519b1d6c81e
+      size: 63682
+    - path: scripts/train_model.py
+      hash: md5
+      md5: 981b5e09bf401f37f763a91347885baa
+      size: 325
+    - path: src/wine_quality_mlops/config.py
+      hash: md5
+      md5: 64bba72723bca88423f0b0071db57256
+      size: 1865
+    - path: src/wine_quality_mlops/schema.py
+      hash: md5
+      md5: 1274d5b5849d4e5037f7339fb7211627
+      size: 401
+    - path: src/wine_quality_mlops/train.py
+      hash: md5
+      md5: 436c9b280bcf2f552d81e95eaed8bf68
+      size: 3170
+    outs:
+    - path: artifacts/metrics.json
+      hash: md5
+      md5: 0c0281916b5a58f90de1a70713200544
+      size: 204
+    - path: artifacts/model.joblib
+      hash: md5
+      md5: 7a423324aeb1c5719b1fe28a9d2f9f41
+      size: 7740641
+    - path: artifacts/model_metadata.json
+      hash: md5
+      md5: aca9dee1275d36db10e08352c642b785
+      size: 409
