@@ -1,0 +1,11 @@
+.git
+.venv
+__pycache__
+.pytest_cache
+.coverage
+coverage.xml
+artifacts
+data/processed
+*.pyc
+*.pyo
+*.pyd
