@@ -69,7 +69,7 @@ docker compose up -d postgres api
 docker compose --profile seed run --rm db-seed
 ```
 
-`docker-compose.yml` используется обязательно: он поднимает PostgreSQL, API и отдельный seed-контейнер для загрузки обучающего и валидационного наборов в базу.
+`docker-compose.yml` используется обязательно: он поднимает PostgreSQL, API и отдельный seed-контейнер для загрузки обучающего и тестового наборов в базу.
 
 ## Переменные окружения
 
@@ -88,7 +88,7 @@ docker compose --profile seed run --rm db-seed
 
 Пример структуры есть в `.env.example`.
 
-Локальные рабочие значения уже указаны в `.env.example`. Для быстрого старта можно просто скопировать его в `.env` без дополнительных правок.
+Для локального запуска скопируй `.env.example` в `.env` и задай свои значения подключения.
 
 ## API
 
@@ -106,11 +106,11 @@ docker compose --profile seed run --rm db-seed
 
 Для раздельной сдачи лучше создать четыре отдельных Pipeline job и указать для каждой свой `Script Path`:
 
-- `jenkins/lab1-ci.Jenkinsfile` — CI для первой лабы: `dvc repro`, `pytest`, сборка Docker image, `dev_sec_ops.yml`.
+- `Jenkinsfile` — legacy-комбинированный pipeline для полного локального цикла сборки и проверки.
 - `jenkins/lab1-ci.Jenkinsfile` — CI для первой лабы: `dvc repro`, `pytest`, сборка Docker image, push в Docker Hub и опциональный вызов CD job.
 - `jenkins/lab1-cd.Jenkinsfile` — CD для первой лабы: функциональное тестирование по сценарию через `docker-compose`, ручной запуск или вызов из CI.
-- `jenkins/lab2-ci.Jenkinsfile` — CI для второй лабы: проверка PostgreSQL seed и функционального сценария через `docker-compose`.
-- `jenkins/lab2-cd.Jenkinsfile` — CD для второй лабы: развёртывание стека `postgres + api`, загрузка train/test данных и smoke/functional проверка.
+- `jenkins/lab2-ci.Jenkinsfile` — CI для второй лабы: сборка Docker image, push в Docker Hub, проверка PostgreSQL seed и функционального сценария через `docker-compose`.
+- `jenkins/lab2-cd.Jenkinsfile` — CD для второй лабы: развёртывание стека `postgres + api`, загрузка train/test данных и функциональная проверка.
 
 Минимальные Jenkins credentials:
 

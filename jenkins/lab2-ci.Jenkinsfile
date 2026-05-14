@@ -16,6 +16,9 @@ pipeline {
         string(name: 'POSTGRES_DB', defaultValue: '', description: 'PostgreSQL database name.')
         string(name: 'POSTGRES_USER', defaultValue: '', description: 'PostgreSQL application user.')
         string(name: 'POSTGRES_PASSWORD_CREDENTIALS_ID', defaultValue: 'postgres-password', description: 'Jenkins Secret Text credentials ID for PostgreSQL password.')
+        booleanParam(name: 'PUSH_IMAGE', defaultValue: true, description: 'Push the built Docker image to Docker Hub.')
+        booleanParam(name: 'TRIGGER_CD', defaultValue: false, description: 'Trigger the Lab2 CD pipeline after a successful CI run.')
+        string(name: 'CD_JOB_NAME', defaultValue: 'WineQuality-Lab2-CD', description: 'Jenkins job name for the Lab2 CD pipeline.')
     }
 
     environment {
@@ -112,6 +115,32 @@ if (-not (Test-Path .venv/Scripts/python.exe)) {
             }
         }
 
+        stage('Push Docker Image') {
+            when {
+                expression { params.PUSH_IMAGE }
+            }
+            steps {
+                powershell '''
+$ErrorActionPreference = 'Stop'
+if ($env:RESOLVED_IMAGE_NAME -notmatch '/') {
+    throw 'For Docker Hub push set DOCKER_IMAGE_NAME as username/repository, for example yourname/wine-quality-mlops.'
+}
+docker push "$env:RESOLVED_IMAGE_NAME`:$env:RESOLVED_IMAGE_TAG"
+if ($LASTEXITCODE -ne 0) {
+    throw 'Docker push for the build tag failed.'
+}
+docker tag "$env:RESOLVED_IMAGE_NAME`:$env:RESOLVED_IMAGE_TAG" "$env:RESOLVED_IMAGE_NAME`:latest"
+if ($LASTEXITCODE -ne 0) {
+    throw 'Docker tag latest failed.'
+}
+docker push "$env:RESOLVED_IMAGE_NAME`:latest"
+if ($LASTEXITCODE -ne 0) {
+    throw 'Docker push for latest failed.'
+}
+'''
+            }
+        }
+
         stage('Seed PostgreSQL') {
             steps {
                 powershell '''
@@ -161,6 +190,26 @@ docker cp "$containerId`:/app/artifacts/functional-test-report.json" functional-
                 powershell '''
 & "./.venv/Scripts/python.exe" scripts/generate_dev_sec_ops.py --image-ref "$env:RESOLVED_IMAGE_NAME`:$env:RESOLVED_IMAGE_TAG" --coverage-xml coverage.xml --output dev_sec_ops.yml
 '''
+            }
+        }
+
+        stage('Trigger Lab 2 CD') {
+            when {
+                expression { params.TRIGGER_CD }
+            }
+            steps {
+                build job: params.CD_JOB_NAME,
+                    wait: false,
+                    parameters: [
+                        string(name: 'DOCKER_IMAGE_NAME', value: env.RESOLVED_IMAGE_NAME),
+                        string(name: 'DOCKER_IMAGE_TAG', value: env.RESOLVED_IMAGE_TAG),
+                        string(name: 'APP_PORT', value: env.RESOLVED_APP_PORT),
+                        string(name: 'DATABASE_HOST', value: env.RESOLVED_DATABASE_HOST),
+                        string(name: 'DATABASE_PORT', value: env.RESOLVED_DATABASE_PORT),
+                        string(name: 'POSTGRES_DB', value: env.RESOLVED_POSTGRES_DB),
+                        string(name: 'POSTGRES_USER', value: env.RESOLVED_POSTGRES_USER),
+                        string(name: 'POSTGRES_PASSWORD_CREDENTIALS_ID', value: params.POSTGRES_PASSWORD_CREDENTIALS_ID),
+                    ]
             }
         }
     }
