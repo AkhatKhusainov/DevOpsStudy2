@@ -7,7 +7,23 @@
       "path": "/health",
       "expected_status": 200,
       "response_contains": {
-        "status": "ok"
+        "status": "ok",
+        "database_status": {
+          "enabled": true,
+          "connected": true
+        }
+      }
+    },
+    {
+      "name": "training-data-summary",
+      "method": "GET",
+      "path": "/training-data/summary",
+      "expected_status": 200,
+      "response_contains": {
+        "splits": {
+          "train": 1087,
+          "test": 272
+        }
       }
     },
     {
@@ -28,9 +44,28 @@
         "sulphates": 0.56,
         "alcohol": 9.4
       },
+      "response_contains": {
+        "stored_in_db": true,
+        "model_version": "0.1.0"
+      },
       "expected_keys": [
         "predicted_quality",
-        "model_version"
+        "model_version",
+        "prediction_id",
+        "stored_in_db"
+      ]
+    },
+    {
+      "name": "latest-prediction",
+      "method": "GET",
+      "path": "/predictions/latest",
+      "expected_status": 200,
+      "expected_keys": [
+        "prediction_id",
+        "predicted_quality",
+        "model_version",
+        "request_payload",
+        "created_at"
       ]
     }
   ]

@@ -10,6 +10,7 @@ import requests
 
 
 def execute_step(
+    session: requests.Session,
     base_url: str,
     step: dict[str, object],
     retries: int,
@@ -22,7 +23,7 @@ def execute_step(
 
     for attempt in range(retries):
         try:
-            response = requests.request(method, url, json=step.get("json"), timeout=15)
+            response = session.request(method, url, json=step.get("json"), timeout=15)
             response_body: object
 
             try:
@@ -81,8 +82,10 @@ def main() -> None:
     overall_status = "passed"
 
     try:
-        for step in scenario["steps"]:
-            results.append(execute_step(base_url, step, args.retries, args.retry_delay))
+        with requests.Session() as session:
+            session.trust_env = False
+            for step in scenario["steps"]:
+                results.append(execute_step(session, base_url, step, args.retries, args.retry_delay))
     except Exception as error:  # noqa: BLE001
         overall_status = "failed"
         results.append({"name": "failure", "error": str(error)})

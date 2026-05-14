@@ -8,5 +8,7 @@ pytest-cov==6.1.1
 httpx==0.28.1
 requests==2.32.3
 PyYAML==6.0.2
+SQLAlchemy==2.0.40
+psycopg[binary]==3.2.9
 pathspec==0.12.1
 dvc==3.59.2
