@@ -1,15 +1,15 @@
-generated_at: '2026-05-14T13:25:45.611668+00:00'
+generated_at: '2026-05-14T15:40:55.384889+00:00'
 docker_image:
-  ref: ntfs121/wine-quality-mlops:build-1
-  digest: ntfs121/wine-quality-mlops@sha256:7684536ed06386f301bcbc11eccdff7f74181ac693f675d16331fb4faf6a29ee
-  image_id: sha256:7684536ed06386f301bcbc11eccdff7f74181ac693f675d16331fb4faf6a29ee
+  ref: ntfs121/wine-quality-mlops:build-3
+  digest: ntfs121/wine-quality-mlops@sha256:8036646651262c65f71db2d6093b2d70f290b8e733f21f0846d7b81e8e691cc1
+  image_id: sha256:8036646651262c65f71db2d6093b2d70f290b8e733f21f0846d7b81e8e691cc1
 git:
   last_5_commits:
+  - 1d68fdc32fb6ebbf69ddfb6bcc944655f4bdbcc5
+  - 08a16a9ec32d4f14d4543a78462619c3cced677c
   - f83b23db01babc300404c965437f40a0ca8ef45f
   - 3b42cb848cc0eebfec56aaa7373ea142c0344a66
   - db0361bbc0676d0a8941f191991d6308b6875e3a
-  - 3d49e9017a5a295dd78f879a7d836e6389f14ea9
-  - 2140ba8ea8e77639223680b26bf6838246ce7564
 quality:
   test_coverage: n/a
 notes:
