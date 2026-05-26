@@ -12,6 +12,7 @@ pipeline {
         string(name: 'DOCKER_IMAGE_TAG', defaultValue: '', description: 'Optional Docker image tag. Leave empty to use build-BUILD_NUMBER.')
         string(name: 'DOCKERHUB_CREDENTIALS_ID', defaultValue: 'dockerhub-credentials', description: 'Jenkins Username/Password credentials ID for Docker Hub login. Leave empty to reuse the host Docker login.')
         string(name: 'APP_PORT', defaultValue: '', description: 'Published API port for docker compose.')
+        string(name: 'POSTGRES_EXPOSE_PORT', defaultValue: '15432', description: 'Published PostgreSQL port for docker compose during Jenkins validation.')
         string(name: 'DATABASE_HOST', defaultValue: '', description: 'PostgreSQL host or service name.')
         string(name: 'DATABASE_PORT', defaultValue: '', description: 'PostgreSQL port.')
         string(name: 'POSTGRES_DB', defaultValue: '', description: 'PostgreSQL database name.')
@@ -56,6 +57,7 @@ pipeline {
                     env.RESOLVED_IMAGE_NAME = params.DOCKER_IMAGE_NAME?.trim() ? params.DOCKER_IMAGE_NAME.trim() : 'wine-quality-mlops'
                     env.RESOLVED_IMAGE_TAG = params.DOCKER_IMAGE_TAG?.trim() ? params.DOCKER_IMAGE_TAG.trim() : "build-${env.BUILD_NUMBER}"
                     env.RESOLVED_APP_PORT = params.APP_PORT.trim()
+                    env.RESOLVED_POSTGRES_EXPOSE_PORT = params.POSTGRES_EXPOSE_PORT?.trim() ? params.POSTGRES_EXPOSE_PORT.trim() : '15432'
                     env.RESOLVED_DATABASE_HOST = params.DATABASE_HOST.trim()
                     env.RESOLVED_DATABASE_PORT = params.DATABASE_PORT.trim()
                     env.RESOLVED_POSTGRES_DB = params.POSTGRES_DB.trim()
@@ -75,6 +77,7 @@ pipeline {
                             "DOCKER_IMAGE_NAME=${env.RESOLVED_IMAGE_NAME}\n" +
                             "DOCKER_IMAGE_TAG=${env.RESOLVED_IMAGE_TAG}\n" +
                             "APP_PORT=${env.RESOLVED_APP_PORT}\n" +
+                            "POSTGRES_EXPOSE_PORT=${env.RESOLVED_POSTGRES_EXPOSE_PORT}\n" +
                             "DATABASE_HOST=${env.RESOLVED_DATABASE_HOST}\n" +
                             "DATABASE_PORT=${env.RESOLVED_DATABASE_PORT}\n" +
                             "POSTGRES_DB=${env.RESOLVED_POSTGRES_DB}\n" +
@@ -163,8 +166,34 @@ if ($LASTEXITCODE -ne 0) {
         stage('Seed PostgreSQL') {
             steps {
                 powershell '''
+$ErrorActionPreference = 'Stop'
 docker compose --env-file .jenkins.env up -d postgres
+if ($LASTEXITCODE -ne 0) {
+    throw 'PostgreSQL startup failed.'
+}
+
+$containerId = docker compose --env-file .jenkins.env ps -q postgres
+if (-not $containerId) {
+    throw 'PostgreSQL container was not found.'
+}
+
+for ($attempt = 0; $attempt -lt 20; $attempt++) {
+    $status = docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' $containerId
+    if ($status -eq 'healthy') {
+        break
+    }
+
+    if ($attempt -eq 19) {
+        throw "PostgreSQL did not become healthy. Last status: $status"
+    }
+
+    Start-Sleep -Seconds 5
+}
+
 docker compose --env-file .jenkins.env --profile seed run --rm db-seed
+if ($LASTEXITCODE -ne 0) {
+    throw 'Database seed failed.'
+}
 '''
             }
         }
@@ -223,6 +252,7 @@ docker cp "$containerId`:/app/artifacts/functional-test-report.json" functional-
                         string(name: 'DOCKER_IMAGE_NAME', value: env.RESOLVED_IMAGE_NAME),
                         string(name: 'DOCKER_IMAGE_TAG', value: env.RESOLVED_IMAGE_TAG),
                         string(name: 'APP_PORT', value: env.RESOLVED_APP_PORT),
+                        string(name: 'POSTGRES_EXPOSE_PORT', value: env.RESOLVED_POSTGRES_EXPOSE_PORT),
                         string(name: 'DATABASE_HOST', value: env.RESOLVED_DATABASE_HOST),
                         string(name: 'DATABASE_PORT', value: env.RESOLVED_DATABASE_PORT),
                         string(name: 'POSTGRES_DB', value: env.RESOLVED_POSTGRES_DB),
