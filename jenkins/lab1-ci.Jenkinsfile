@@ -10,6 +10,7 @@ pipeline {
     parameters {
         string(name: 'DOCKER_IMAGE_NAME', defaultValue: 'wine-quality-mlops', description: 'Docker image name. For Docker Hub push use username/repository.')
         string(name: 'DOCKER_IMAGE_TAG', defaultValue: '', description: 'Optional Docker image tag. Leave empty to use build-BUILD_NUMBER.')
+        string(name: 'DOCKERHUB_CREDENTIALS_ID', defaultValue: 'dockerhub-credentials', description: 'Jenkins Username/Password credentials ID for Docker Hub login.')
         booleanParam(name: 'TRIGGER_CD', defaultValue: false, description: 'Trigger the Lab 1 CD functional pipeline after a successful push.')
         string(name: 'CD_JOB_NAME', defaultValue: 'WineQuality-Lab1-CD', description: 'Jenkins job name for the Lab 1 CD pipeline.')
     }
@@ -75,10 +76,17 @@ if ($LASTEXITCODE -ne 0) {
 
         stage('Push Docker Image') {
             steps {
-                powershell '''
+                withCredentials([
+                    usernamePassword(credentialsId: params.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_TOKEN')
+                ]) {
+                    powershell '''
 $ErrorActionPreference = 'Stop'
 if ($env:RESOLVED_IMAGE_NAME -notmatch '/') {
     throw 'For Docker Hub push set DOCKER_IMAGE_NAME as username/repository, for example yourname/wine-quality-mlops.'
+}
+$env:DOCKERHUB_TOKEN | docker login --username "$env:DOCKERHUB_USERNAME" --password-stdin
+if ($LASTEXITCODE -ne 0) {
+    throw 'Docker Hub login failed.'
 }
 docker push "$env:RESOLVED_IMAGE_NAME`:$env:RESOLVED_IMAGE_TAG"
 if ($LASTEXITCODE -ne 0) {
@@ -93,6 +101,7 @@ if ($LASTEXITCODE -ne 0) {
     throw 'Docker push for latest failed.'
 }
 '''
+                }
             }
         }
 
