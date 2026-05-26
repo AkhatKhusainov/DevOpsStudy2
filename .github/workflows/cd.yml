@@ -1,4 +1,4 @@
-name: Lab1 CD
+name: Lab2 CD
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
   schedule:
     - cron: "0 6 * * 1"
   workflow_run:
-    workflows: ["Lab1 CI"]
+    workflows: ["Lab2 CI"]
     types:
       - completed
 
@@ -25,7 +25,7 @@ jobs:
       POSTGRES_DB: ${{ vars.POSTGRES_DB }}
       POSTGRES_USER: ${{ vars.POSTGRES_USER }}
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      DOCKER_IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/wine-quality-mlops
+      DOCKER_IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/wine-quality-mlops-lab2
 
     steps:
       - name: Checkout repository
@@ -88,7 +88,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: lab1-cd-functional-report
+          name: lab2-cd-functional-report
           path: functional-test-report.json
 
       - name: Show container logs

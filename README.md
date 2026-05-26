@@ -1,9 +1,6 @@
-# Wine Quality MLOps
+# Wine Quality MLOps Lab2
 
-Учебный проект для двух лабораторных работ:
-
-- CI/CD для ML-модели на датасете Wine Quality;
-- взаимодействие сервиса модели с PostgreSQL через `docker-compose`.
+Учебный проект для второй лабораторной работы по CI/CD для ML-модели на датасете Wine Quality.
 
 ## Что реализовано
 
@@ -15,7 +12,7 @@
 - unit и API tests на `pytest`;
 - DVC pipeline для этапов `prepare` и `train`;
 - Docker image и `docker-compose.yml`;
-- GitHub Actions workflows для CI и CD;
+- GitHub Actions workflows для Lab2 CI и Lab2 CD;
 - служебные файлы `config.ini`, `dev_sec_ops.yml`, `scenario.json`, `.env.example`.
 
 ## Структура
@@ -99,26 +96,20 @@ docker compose --profile seed run --rm db-seed
 
 ## CI/CD
 
-- `Lab1 CI`: workflow `.github/workflows/ci.yml` запускается по `pull_request` в `main`, прогоняет `dvc repro`, `pytest`, собирает Docker image и отправляет его в Docker Hub.
-- `Lab1 CD`: workflow `.github/workflows/cd.yml` запускается вручную, по расписанию или после успешного `Lab1 CI`, поднимает стек через `docker compose` и выполняет функциональный сценарий.
+- `Lab2 CI`: workflow `.github/workflows/ci.yml` запускается по `pull_request` в `main`, прогоняет `dvc repro`, `pytest`, собирает Docker image и отправляет его в Docker Hub repo `ntfs121/wine-quality-mlops-lab2`.
+- `Lab2 CD`: workflow `.github/workflows/cd.yml` запускается вручную, по расписанию или после успешного `Lab2 CI`, поднимает стек через `docker compose` и выполняет функциональный сценарий.
 
 ## Jenkins
 
-Для раздельной сдачи лучше создать четыре отдельных Pipeline job и указать для каждой свой `Script Path`:
+Для Jenkins в этом репозитории нужны только lab2 pipeline файлы:
 
-- `Jenkinsfile` — legacy-комбинированный pipeline для полного локального цикла сборки и проверки.
-- `jenkins/lab1-ci.Jenkinsfile` — CI для первой лабы: `dvc repro`, `pytest`, сборка Docker image, push в Docker Hub и опциональный вызов CD job.
-- `jenkins/lab1-cd.Jenkinsfile` — CD для первой лабы: функциональное тестирование по сценарию через `docker-compose`, ручной запуск или вызов из CI.
 - `jenkins/lab2-ci.Jenkinsfile` — CI для второй лабы: сборка Docker image, push в Docker Hub, проверка PostgreSQL seed и функционального сценария через `docker-compose`.
 - `jenkins/lab2-cd.Jenkinsfile` — CD для второй лабы: развёртывание стека `postgres + api`, загрузка train/test данных и функциональная проверка.
 
 Минимальные Jenkins credentials:
 
-- `postgres-password` как Secret text с паролем PostgreSQL для `lab1-cd`, `lab2-ci` и `lab2-cd`.
-
-Для `lab1-ci` pipeline использует уже существующий логин Docker на Jenkins agent, поэтому перед первым запуском нужно один раз выполнить `docker login` на самой машине Jenkins.
-
-Корневой `Jenkinsfile` можно оставить как legacy-комбинированный вариант, но для лабораторных лучше использовать отдельные pipeline-файлы из каталога `jenkins/`.
+- `postgres-password` как Secret text с паролем PostgreSQL для `lab2-ci` и `lab2-cd`.
+- `dockerhub-credentials` как Username/Password credential для Docker Hub push из `lab2-ci`.
 
 ## GitHub и DockerHub
 
@@ -137,6 +128,10 @@ docker compose --profile seed run --rm db-seed
 - `POSTGRES_USER`
 
 Значения для подключения к БД нужно задавать через secrets, repository variables, Jenkins parameters или локальный `.env`, а не фиксировать в исходниках.
+
+## Результаты
+
+- материалы по второй лабораторной работе находятся в `Результаты_работы/Лаба2/`.
 
 ## Цитирование датасета
 

@@ -1,4 +1,4 @@
-name: Lab1 CI
+name: Lab2 CI
 
 on:
   pull_request:
@@ -51,9 +51,9 @@ jobs:
         shell: bash
         run: |
           if [ -n "${{ secrets.DOCKERHUB_USERNAME }}" ]; then
-            echo "DOCKER_IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/wine-quality-mlops" >> "$GITHUB_ENV"
+            echo "DOCKER_IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/wine-quality-mlops-lab2" >> "$GITHUB_ENV"
           else
-            echo "DOCKER_IMAGE_NAME=wine-quality-mlops" >> "$GITHUB_ENV"
+            echo "DOCKER_IMAGE_NAME=wine-quality-mlops-lab2" >> "$GITHUB_ENV"
           fi
           echo "DOCKER_IMAGE_TAG=${{ steps.image_meta.outputs.tag }}" >> "$GITHUB_ENV"
 
@@ -80,7 +80,7 @@ jobs:
       - name: Upload CI artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: lab1-ci-artifacts
+          name: lab2-ci-artifacts
           path: |
             coverage.xml
             dev_sec_ops.yml
