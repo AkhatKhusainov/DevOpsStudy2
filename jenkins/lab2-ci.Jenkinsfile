@@ -10,7 +10,7 @@ pipeline {
     parameters {
         string(name: 'DOCKER_IMAGE_NAME', defaultValue: 'wine-quality-mlops', description: 'Local image name or registry/repository for validation builds.')
         string(name: 'DOCKER_IMAGE_TAG', defaultValue: '', description: 'Optional Docker image tag. Leave empty to use build-BUILD_NUMBER.')
-        string(name: 'DOCKERHUB_CREDENTIALS_ID', defaultValue: 'dockerhub-credentials', description: 'Jenkins Username/Password credentials ID for Docker Hub login.')
+        string(name: 'DOCKERHUB_CREDENTIALS_ID', defaultValue: 'dockerhub-credentials', description: 'Jenkins Username/Password credentials ID for Docker Hub login. Leave empty to reuse the host Docker login.')
         string(name: 'APP_PORT', defaultValue: '', description: 'Published API port for docker compose.')
         string(name: 'DATABASE_HOST', defaultValue: '', description: 'PostgreSQL host or service name.')
         string(name: 'DATABASE_PORT', defaultValue: '', description: 'PostgreSQL port.')
@@ -121,17 +121,17 @@ if (-not (Test-Path .venv/Scripts/python.exe)) {
                 expression { params.PUSH_IMAGE }
             }
             steps {
-                withCredentials([
-                    usernamePassword(credentialsId: params.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_TOKEN')
-                ]) {
-                    powershell '''
+                script {
+                    def pushScript = '''
 $ErrorActionPreference = 'Stop'
 if ($env:RESOLVED_IMAGE_NAME -notmatch '/') {
     throw 'For Docker Hub push set DOCKER_IMAGE_NAME as username/repository, for example yourname/wine-quality-mlops.'
 }
-$env:DOCKERHUB_TOKEN | docker login --username "$env:DOCKERHUB_USERNAME" --password-stdin
-if ($LASTEXITCODE -ne 0) {
-    throw 'Docker Hub login failed.'
+if ($env:DOCKERHUB_USERNAME -and $env:DOCKERHUB_TOKEN) {
+    $env:DOCKERHUB_TOKEN | docker login --username "$env:DOCKERHUB_USERNAME" --password-stdin
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Docker Hub login failed.'
+    }
 }
 docker push "$env:RESOLVED_IMAGE_NAME`:$env:RESOLVED_IMAGE_TAG"
 if ($LASTEXITCODE -ne 0) {
@@ -146,6 +146,16 @@ if ($LASTEXITCODE -ne 0) {
     throw 'Docker push for latest failed.'
 }
 '''
+                    def dockerhubCredentialsId = params.DOCKERHUB_CREDENTIALS_ID?.trim()
+                    if (dockerhubCredentialsId) {
+                        withCredentials([
+                            usernamePassword(credentialsId: dockerhubCredentialsId, usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_TOKEN')
+                        ]) {
+                            powershell pushScript
+                        }
+                    } else {
+                        powershell pushScript
+                    }
                 }
             }
         }
